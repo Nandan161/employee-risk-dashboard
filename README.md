@@ -3,6 +3,26 @@
 
 This repository contains starter code for the **Software Engineering for Data Scientists** final project. Please reference your course materials for documentation on this repository's structure and important files. Happy coding!
 
+# Employee Retention Dashboard
+
+A data-driven dashboard built with FastHTML to help managers monitor employee performance, identify at-risk talent, and take proactive steps to retain key employees. It integrates SQL-backed data pipelines, predictive modeling, and a modular Python backend.
+
+## 🔍 Project Overview
+
+This project solves a business need where top-performing employees are being recruited by competitors. Managers can now view:
+- Performance trends
+- Positive/negative events
+- Machine learning predictions for employee attrition
+
+## 📦 Features
+
+- 📊 Dashboard showing employee/team performance and recruitment risk
+- ⚙️ Python package with reusable SQL execution logic and query classes
+- 🔁 Decorator/Mixin for clean and reusable database interaction
+- 🧠 Integrated ML model (via pickle) for attrition prediction
+- 🧪 Unit tests for SQLite schema validation
+- ✅ GitHub Actions to ensure CI for all code updates
+
 ### Repository Structure
 ```
 ├── README.md
