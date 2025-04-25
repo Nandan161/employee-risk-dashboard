@@ -1,11 +1,25 @@
+import sys
+import os
+from pathlib import Path
+
+# Add the python-package folder to the sys.path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'python-package')))
+sys.path.append(str(Path(__file__).resolve().parent))
+
 from fasthtml.common import *
 import matplotlib.pyplot as plt
 
 # Import QueryBase, Employee, Team from employee_events
 #### YOUR CODE HERE
+# Import QueryBase, Employee, Team from employee_events
+from employee_events.query_base import QueryBase
+from employee_events.employee import Employee
+from employee_events.team import Team
+
 
 # import the load_model function from the utils.py file
 #### YOUR CODE HERE
+from .utils import load_model
 
 """
 Below, we import the parent classes
@@ -24,7 +38,14 @@ from combined_components import FormGroup, CombinedComponent
 
 # Create a subclass of base_components/dropdown
 # called `ReportDropdown`
-#### YOUR CODE HERE
+class ReportDropdown(Dropdown):
+
+    def build_component(self, model):
+        self.label = model.name
+        return super().build_component(model)
+
+    def component_data(self, model):
+        return model.names()
     
     # Overwrite the build_component method
     # ensuring it has the same parameters
@@ -50,7 +71,10 @@ from combined_components import FormGroup, CombinedComponent
 
 # Create a subclass of base_components/BaseComponent
 # called `Header`
-#### YOUR CODE HERE
+class Header(BaseComponent):
+
+    def build_component(self, model):
+        return H1(model.name.title())
 
     # Overwrite the `build_component` method
     # Ensure the method has the same parameters
@@ -65,7 +89,23 @@ from combined_components import FormGroup, CombinedComponent
 
 # Create a subclass of base_components/MatplotlibViz
 # called `LineChart`
-#### YOUR CODE HERE
+class LineChart(MatplotlibViz):
+
+    def visualization(self, model, asset_id):
+        df = model.event_counts(asset_id)
+        df = df.fillna(0)
+        df = df.set_index('date')
+        df = df.sort_index()
+        df = df.cumsum()
+        df.columns = ['Positive', 'Negative']
+        
+        fig, ax = plt.subplots()
+        df.plot(ax=ax)
+        self.set_axis_styling(ax, border_color='black', font_color='black')
+        ax.set_title('Event Timeline')
+        ax.set_xlabel('Date')
+        ax.set_ylabel('Count')
+        return fig
     
     # Overwrite the parent class's `visualization`
     # method. Use the same parameters as the parent
@@ -120,7 +160,24 @@ from combined_components import FormGroup, CombinedComponent
 
 # Create a subclass of base_components/MatplotlibViz
 # called `BarChart`
-#### YOUR CODE HERE
+class BarChart(MatplotlibViz):
+    predictor = load_model()
+
+    def visualization(self, model, asset_id):
+        df = model.model_data(asset_id)
+        probs = self.predictor.predict_proba(df)[:, 1]
+
+        if model.name == "team":
+            pred = probs.mean()
+        else:
+            pred = probs[0]
+
+        fig, ax = plt.subplots()
+        ax.barh([''], [pred])
+        ax.set_xlim(0, 1)
+        ax.set_title('Predicted Recruitment Risk', fontsize=20)
+        self.set_axis_styling(ax, border_color='black', font_color='black')
+        return fig
 
     # Create a `predictor` class attribute
     # assign the attribute to the output
@@ -161,9 +218,9 @@ from combined_components import FormGroup, CombinedComponent
         #### YOUR CODE HERE
         
         # Run the following code unchanged
-        ax.barh([''], [pred])
-        ax.set_xlim(0, 1)
-        ax.set_title('Predicted Recruitment Risk', fontsize=20)
+        # ax.barh([''], [pred])
+        # ax.set_xlim(0, 1)
+        # ax.set_title('Predicted Recruitment Risk', fontsize=20)
         
         # pass the axis variable
         # to the `.set_axis_styling`
@@ -172,7 +229,9 @@ from combined_components import FormGroup, CombinedComponent
  
 # Create a subclass of combined_components/CombinedComponent
 # called Visualizations       
-#### YOUR CODE HERE
+class Visualizations(CombinedComponent):
+    children = [LineChart(), BarChart()]
+    outer_div_type = Div(cls='grid')
 
     # Set the `children`
     # class attribute to a list
@@ -185,7 +244,10 @@ from combined_components import FormGroup, CombinedComponent
             
 # Create a subclass of base_components/DataTable
 # called `NotesTable`
-#### YOUR CODE HERE
+class NotesTable(DataTable):
+
+    def component_data(self, model, entity_id):
+        return model.notes(entity_id)
 
     # Overwrite the `component_data` method
     # using the same parameters as the parent class
@@ -217,7 +279,13 @@ class DashboardFilters(FormGroup):
     
 # Create a subclass of CombinedComponents
 # called `Report`
-#### YOUR CODE HERE
+class Report(CombinedComponent):
+    children = [
+        Header(),
+        DashboardFilters(),
+        Visualizations(),
+        NotesTable()
+    ]
 
     # Set the `children`
     # class attribute to a list
@@ -227,7 +295,22 @@ class DashboardFilters(FormGroup):
     #### YOUR CODE HERE
 
 # Initialize a fasthtml app 
-#### YOUR CODE HERE
+from fasthtml.app import App
+app = App()
+
+report = Report()
+
+@app.get('/')
+def root():
+    return report(1, Employee())
+
+@app.get('/employee/{id}')
+def employee(id: str):
+    return report(id, Employee())
+
+@app.get('/team/{id}')
+def team(id: str):
+    return report(id, Team())
 
 # Initialize the `Report` class
 #### YOUR CODE HERE
@@ -298,4 +381,5 @@ async def update_data(r):
     
 
 
-serve()
+if __name__ == "__main__":
+    serve()
