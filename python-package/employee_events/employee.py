@@ -32,3 +32,13 @@ class Employee(QueryBase, QueryMixin):
             WHERE employee_id = {id}
         """
         return self.pandas_query(sql_query)
+
+
+if __name__ == "__main__":
+    e = Employee()
+    print("Employee names:")
+    print(e.names())
+    print("\nUsername for ID 1:")
+    print(e.username(1))
+    print("\nModel data for ID 1:")
+    print(e.model_data(1))

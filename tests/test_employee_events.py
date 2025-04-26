@@ -1,69 +1,47 @@
 import pytest
 from pathlib import Path
+import sqlite3
 
-# Using pathlib create a project_root
-# variable set to the absolute path
-# for the root of this project
-#### YOUR CODE HERE
+# DO NOT redefine 'project_root' as a variable elsewhere
 
-# apply the pytest fixture decorator
-# to a `db_path` function
-#### YOUR CODE HERE
-    
-    # Using the `project_root` variable
-    # return a pathlib object for the `employee_events.db` file
-    #### YOUR CODE HERE
+# Fixture to get project root
+@pytest.fixture
+def project_root_path():
+    return Path(__file__).resolve().parent.parent
 
-# Define a function called
-# `test_db_exists`
-# This function should receive an argument
-# with the same name as the function
-# the creates the "fixture" for
-# the database's filepath
-#### YOUR CODE HERE
-    
-    # using the pathlib `.is_file` method
-    # assert that the sqlite database file exists
-    # at the location passed to the test_db_exists function
-    #### YOUR CODE HERE
+# Fixture to get path to the database file
+from pathlib import Path
+import pytest
 
+@pytest.fixture
+def db_path():
+    project_root = Path(__file__).resolve().parent.parent  # go up to project root
+    return project_root / 'python-package' / 'employee_events' / 'employee_events.db'
+
+# Test if the database file exists
+def test_db_exists(db_path):
+    assert db_path.is_file(), f"{db_path} does not exist"
+
+# Fixture to connect to the SQLite database
 @pytest.fixture
 def db_conn(db_path):
-    from sqlite3 import connect
-    return connect(db_path)
+    return sqlite3.connect(db_path)
 
+# Fixture to get all table names from the database
 @pytest.fixture
 def table_names(db_conn):
-    name_tuples = db_conn.execute("SELECT name FROM sqlite_master WHERE type='table';").fetchall()
-    return [x[0] for x in name_tuples]
+    cursor = db_conn.cursor()
+    cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
+    return [row[0] for row in cursor.fetchall()]
 
-# Define a test function called
-# `test_employee_table_exists`
-# This function should receive the `table_names`
-# fixture as an argument
-#### YOUR CODE HERE
+# Test for employee table
+def test_employee_table_exists(table_names):
+    assert 'employee' in table_names, "'employee' table does not exist"
 
-    # Assert that the string 'employee'
-    # is in the table_names list
-    #### YOUR CODE HERE
+# Test for team table
+def test_team_table_exists(table_names):
+    assert 'team' in table_names, "'team' table does not exist"
 
-# Define a test function called
-# `test_team_table_exists`
-# This function should receive the `table_names`
-# fixture as an argument
-#### YOUR CODE HERE
-
-    # Assert that the string 'team'
-    # is in the table_names list
-    #### YOUR CODE HERE
-
-# Define a test function called
-# `test_employee_events_table_exists`
-# This function should receive the `table_names`
-# fixture as an argument
-#### YOUR CODE HERE
-
-    # Assert that the string 'employee_events'
-    # is in the table_names list
-    #### YOUR CODE HERE
-
+# Test for employee_events table
+def test_employee_events_table_exists(table_names):
+    assert 'employee_events' in table_names, "'employee_events' table does not exist"
